@@ -1,9 +1,5 @@
 #!/bin/sh
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
-
 cleanup() {
   rm -rf "$WORK_DIR"
 }
@@ -61,7 +57,7 @@ if test -f "$INPUT"; then
 
       (cd $DIR; dune exec ./main.exe -- -$ARCH $INPUT $FLAGS -o $WORK_DIR/lambda.S)
       gcc -c runtime_x86_64.S -o $WORK_DIR/runtime.o
-      gcc $WORK_DIR/runtime.o $WORK_DIR/lambda.S -o $OUTPUT
+      gcc $WORK_DIR/runtime.o $WORK_DIR/lambda.S -o $OUTPUT -static
 
       # Link with runtime into a binary.
       trap cleanup EXIT
