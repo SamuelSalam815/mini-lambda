@@ -17,6 +17,10 @@ rule token = parse
   | eof { EOF }
   | '+' { PLUS }
   | '-' { MINUS }
+  | "==" { EQUALS }
+  | "!=" { NOTEQUALS }
+  | "&&" { AND }
+  | "||" { OR }
   | '(' { LPAREN }
   | ')' { RPAREN }
   | '{' { LBRACE }
@@ -28,6 +32,7 @@ rule token = parse
   | "func" { FUNC }
   | "return" { RETURN }
   | "<-" { BIND }
+  | ["true" "false"] as str { BOOL( str = "true" ) }
   | ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '_' '0'-'9']* {
     IDENT (Lexing.lexeme lexbuf)
   }

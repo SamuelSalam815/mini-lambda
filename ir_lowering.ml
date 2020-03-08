@@ -10,7 +10,7 @@ let lower program =
   let funcs_by_id = Hashtbl.create 10 in
   Array.iter
     (Array.iter
-      (fun func -> Hashtbl.add funcs_by_id func.id (func, new_id ()))
+       (fun func -> Hashtbl.add funcs_by_id func.id (func, new_id ()))
     )
     program;
 
@@ -27,10 +27,10 @@ let lower program =
           (* Decide whether the symbol is a function or a builtin. *)
           let { body; name; _ }, closure_id = Hashtbl.find funcs_by_id id in
           (match body with
-          | None ->
-            Ir.GetBuiltin name :: acc
-          | Some _ ->
-            Ir.GetClosure closure_id :: acc
+           | None ->
+             Ir.GetBuiltin name :: acc
+           | Some _ ->
+             Ir.GetClosure closure_id :: acc
           )
         | EnvExpr(_, id) ->
           Ir.GetEnv id :: acc
@@ -40,10 +40,20 @@ let lower program =
           Ir.GetArg id :: acc
         | IntExpr(_, i) ->
           Ir.ConstInt i :: acc
+        | BoolExpr(_, i) ->
+          Ir.ConstBool i :: acc
         | AddExpr(_, lhs, rhs) ->
           Ir.Add :: lower_expr (lower_expr acc lhs) rhs
         | SubExpr(_, lhs, rhs) ->
           Ir.Sub :: lower_expr (lower_expr acc lhs) rhs
+        | EqualsExpr(_, lhs, rhs) ->
+          Ir.Equals :: lower_expr (lower_expr acc lhs) rhs
+        | NotEqualsExpr(_, lhs, rhs) ->
+          Ir.NotEquals :: lower_expr (lower_expr acc lhs) rhs
+        | AndExpr(_, lhs, rhs) ->
+          Ir.And :: lower_expr (lower_expr acc lhs) rhs
+        | OrExpr(_, lhs, rhs) ->
+          Ir.Or :: lower_expr (lower_expr acc lhs) rhs
         | LambdaExpr(_, num_params, env, body) ->
           (* Create a new closure from the body. *)
           let id = new_id() in

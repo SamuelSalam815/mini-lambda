@@ -7,13 +7,13 @@
  * are lowered to closures which do not capture anything.
  *
  * Some helper methods to dump the IR are also included.
- *)
+*)
 
 type inst
-  (* Pushes the address of a closure onto the stack. *)
-  (* This is not a function - it is a block of memory whose first field is *)
-  (* a pointer to the actual function. This is due to the lack of distinction *)
-  (* between functions and closures in the runtime. *)
+(* Pushes the address of a closure onto the stack. *)
+(* This is not a function - it is a block of memory whose first field is *)
+(* a pointer to the actual function. This is due to the lack of distinction *)
+(* between functions and closures in the runtime. *)
   = GetClosure of int
   (* Pushes a closure for a builtin, provided by the standard library. *)
   | GetBuiltin of string
@@ -27,12 +27,22 @@ type inst
   | SetLocal of int
   (* Pops a constant onto the stack. *)
   | ConstInt of int
+  (* Pops a boolean onto the stack. *)
+  | ConstBool of bool
   (* Pops a number of values and pushes a closure capturing them. *)
   | Closure of int * int
   (* Pops two values and pushes their sum. *)
   | Add
   (* Pops two values and pushes their difference *)
   | Sub
+  (* Pops two booleans and performs equality check *)
+  | Equals
+  (* Pops two booleans and performs XOR *)
+  | NotEquals
+  (* Pops two booleans and performs logical AND *)
+  | And
+  (* Pops two booleans and performs logical OR *)
+  | Or
   (* Pops a closure and invokes it. *)
   | Call
   (* Pops a return value and returns. *)
@@ -60,9 +70,14 @@ let print_inst out inst =
   | GetLocal i    -> Printf.fprintf out "\tGetLocal(%d)\n" i
   | SetLocal i    -> Printf.fprintf out "\tSetLocal(%d)\n" i
   | ConstInt i    -> Printf.fprintf out "\tConstInt(%d)\n" i
+  | ConstBool i   -> Printf.fprintf out "\tConstBool(%d)\n" i
   | Closure(i, n) -> Printf.fprintf out "\tClosure(%d, %d)\n" i n
   | Add           -> Printf.fprintf out "\tAdd\n"
   | Sub           -> Printf.fprintf out "\tSub\n"
+  | Equals        -> Printf.fprintf out "\tEquals\n"
+  | NotEquals     -> Printf.fprintf out "\tNotEquals\n"
+  | And           -> Printf.fprintf out "\tAnd\n"
+  | Or            -> Printf.fprintf out "\tOr\n"
   | Call          -> Printf.fprintf out "\tInvoke\n"
   | Return        -> Printf.fprintf out "\tReturn\n"
   | Pop           -> Printf.fprintf out "\tPop\n"
