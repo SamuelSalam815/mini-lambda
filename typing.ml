@@ -173,6 +173,12 @@ let rec check_expr scope expr
     let rhs', ty_rhs = check_expr scope rhs in
     unify loc ty_rhs TyInt;
     Typed_ast.AddExpr(loc, lhs', rhs'), TyInt
+  | SubExpr(loc, lhs, rhs) ->
+    let lhs', ty_lhs = check_expr scope lhs in
+    unify loc ty_lhs TyInt;
+    let rhs', ty_rhs = check_expr scope rhs in
+    unify loc ty_rhs TyInt;
+    Typed_ast.SubExpr(loc, lhs', rhs'), TyInt
   | LambdaExpr(loc, params, body) ->
     let args, ty_args = List.fold_left
       (fun (map, ty_args) param ->
@@ -240,6 +246,8 @@ let rec find_refs_expr bound acc expr
   | IntExpr(_, _) ->
     acc
   | AddExpr(_, lhs, rhs) ->
+    find_refs_expr bound (find_refs_expr bound acc rhs) lhs
+  | SubExpr(_, lhs, rhs) ->
     find_refs_expr bound (find_refs_expr bound acc rhs) lhs
   | LambdaExpr(_, params, body) ->
     find_refs_expr (List.append params bound) acc body
@@ -431,4 +439,3 @@ let check prog =
     ) ([], IdentMap.empty) sccs
   in
   Array.of_list (List.rev typed_prog)
-
