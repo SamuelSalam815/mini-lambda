@@ -29,10 +29,13 @@ rule token = parse
   | ";" { SEMI }
   | "\\" { LAMBDA }
   | "->" { ARROW }
+  | "if" { IF }
+  | "else" { ELSE }
   | "func" { FUNC }
   | "return" { RETURN }
   | "<-" { BIND }
-  | ["true" "false"] as str { BOOL( str = "true" ) }
+  | "true"  { BOOL( true ) }
+  | "false" { BOOL( false ) }
   | ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '_' '0'-'9']* {
     IDENT (Lexing.lexeme lexbuf)
   }

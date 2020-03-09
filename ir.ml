@@ -43,6 +43,12 @@ type inst
   | And
   (* Pops two booleans and performs logical OR *)
   | Or
+  (* Pops a boolean from the stack then performs conditional jump to label *)
+  | If of string
+  (* Unconditional jump to first label followed by second label *)
+  | Else of string * string
+  (* writes label *)
+  | EndIf of string
   (* Pops a closure and invokes it. *)
   | Call
   (* Pops a return value and returns. *)
@@ -70,7 +76,7 @@ let print_inst out inst =
   | GetLocal i    -> Printf.fprintf out "\tGetLocal(%d)\n" i
   | SetLocal i    -> Printf.fprintf out "\tSetLocal(%d)\n" i
   | ConstInt i    -> Printf.fprintf out "\tConstInt(%d)\n" i
-  | ConstBool i   -> Printf.fprintf out "\tConstBool(%d)\n" i
+  | ConstBool i   -> Printf.fprintf out "\tConstBool(%d)\n" (if i then 1 else 0)
   | Closure(i, n) -> Printf.fprintf out "\tClosure(%d, %d)\n" i n
   | Add           -> Printf.fprintf out "\tAdd\n"
   | Sub           -> Printf.fprintf out "\tSub\n"
@@ -78,6 +84,9 @@ let print_inst out inst =
   | NotEquals     -> Printf.fprintf out "\tNotEquals\n"
   | And           -> Printf.fprintf out "\tAnd\n"
   | Or            -> Printf.fprintf out "\tOr\n"
+  | If l          -> Printf.fprintf out "\tIf(%s)\n" l
+  | Else (end_label,else_label)->Printf.fprintf out "\tElse(%s, %s)\n" end_label else_label
+  | EndIf l       -> Printf.fprintf out "\tEndIf(%s)\n" l
   | Call          -> Printf.fprintf out "\tInvoke\n"
   | Return        -> Printf.fprintf out "\tReturn\n"
   | Pop           -> Printf.fprintf out "\tPop\n"

@@ -247,26 +247,47 @@ let rec check_expr scope expr
     Typed_ast.CallExpr(loc, callee', Array.of_list (List.map fst args')), ret_ty
 
 (* Checks the type of a statement. *)
-let check_statements ret_ty acc scope stats
-  = let rec iter (nb, acc) scope stats = match stats with
-      | ReturnStmt(loc, e) :: rest ->
-        let e', ty = check_expr scope e in
-        unify loc ty ret_ty;
-        let node = Typed_ast.ReturnStmt(loc, e') in
-        iter (nb, node :: acc) scope rest
-      | ExprStmt(loc, e) :: rest ->
-        (* It is a funky design choice to unify everything with unit. *)
-        let e', ty = check_expr scope e in
-        unify loc ty TyUnit;
-        let node = Typed_ast.ExprStmt(loc, e') in
-        iter (nb, node :: acc) scope rest
-      | BindStmt(loc, name, e) :: rest ->
-        let e', ty = check_expr scope e in
-        let scope' = BindScope(name, nb, ty) :: scope in
-        let node = Typed_ast.BindStmt(loc, nb, e') in
-        iter (nb + 1, node :: acc) scope' rest
-      | [] ->
-        (nb, acc)
+let rec check_statements ret_ty acc scope stats
+  = let extract_statements statements = (match statements with
+      | None ->
+        None, 0
+      | Some body ->
+        let nb, body = check_statements (new_ty_var()) (0, []) scope body in
+        Some (List.rev body), nb
+    )
+  in
+  let rec iter (nb, acc) scope stats = match stats with
+    | ReturnStmt(loc, e) :: rest ->
+      let e', ty = check_expr scope e in
+      unify loc ty ret_ty;
+      let node = Typed_ast.ReturnStmt(loc, e') in
+      iter (nb, node :: acc) scope rest
+    | ExprStmt(loc, e) :: rest ->
+      (* It is a funky design choice to unify everything with unit. *)
+      let e', ty = check_expr scope e in
+      unify loc ty TyUnit;
+      let node = Typed_ast.ExprStmt(loc, e') in
+      iter (nb, node :: acc) scope rest
+    | BindStmt(loc, name, e) :: rest ->
+      let e', ty = check_expr scope e in
+      let scope' = BindScope(name, nb, ty) :: scope in
+      let node = Typed_ast.BindStmt(loc, nb, e') in
+      iter (nb + 1, node :: acc) scope' rest
+    | IfStmt(loc, e, statements) :: rest ->
+      let e', ty = check_expr scope e in
+      unify loc ty TyBool;
+      let statements', num_locals = extract_statements statements in
+      let node = Typed_ast.IfStmt(loc, e', statements') in
+      iter (nb + num_locals, node :: acc) scope rest
+    | IfElseStmt(loc, e, true_branch, false_branch) :: rest ->
+      let e', ty = check_expr scope e in
+      unify loc ty TyBool;
+      let true_branch', num_locals_a = extract_statements true_branch in
+      let false_branch', num_locals_b = extract_statements false_branch in
+      let node = Typed_ast.IfElseStmt(loc, e', true_branch', false_branch') in
+      iter (nb + num_locals_a + num_locals_b , node :: acc) scope rest
+    | [] ->
+      (nb, acc)
   in iter acc scope stats
 
 (* Finds the free variables in an expression. *)
@@ -296,9 +317,14 @@ let rec find_refs_expr bound acc expr
     List.fold_left (find_refs_expr bound) (find_refs_expr bound acc callee) args
 
 (* Finds the free variables in a function body. *)
-let find_refs_stat bound stats
+let rec find_refs_stat bound rec_acc stats
   = let _, acc = List.fold_left
         (fun (bound, acc) stat ->
+           let extract_block block =
+             match block with
+             | None -> []
+             | Some x -> x
+           in
            match stat with
            | ReturnStmt(_, e) ->
              (bound, find_refs_expr bound acc e)
@@ -307,7 +333,17 @@ let find_refs_stat bound stats
            | BindStmt(_, name, e) ->
              (* The expression can refer to previous instances of 'name'. *)
              (name :: bound, find_refs_expr bound acc e)
-        ) (bound, []) stats
+           | IfStmt (_, e, block) ->
+             let condition_acc = find_refs_expr bound acc e in
+             let block' = extract_block block in
+             (bound, find_refs_stat bound condition_acc block' )
+           | IfElseStmt (_,e,if_block,else_block) ->
+             let condition_acc = find_refs_expr bound acc e in
+             let if_block' = extract_block if_block in
+             let else_block' = extract_block else_block in
+             let if_acc = find_refs_stat bound condition_acc if_block' in
+             (bound, find_refs_stat bound if_acc else_block')
+        ) (bound, rec_acc) stats
   in acc
 
 (* Helper structure for the very hacky and imperative SCC implementation. *)
@@ -330,7 +366,7 @@ let check prog =
                         | None ->
                           []
                         | Some body ->
-                          find_refs_stat func.params body
+                          find_refs_stat func.params [] body
                      )
   in
 

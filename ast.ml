@@ -4,7 +4,7 @@
  * by the parser. In order to generate accurate error
  * messages further down the pipeline, source locations
  * are included in each node.
- *)
+*)
 
 type loc = Lexing.position
 
@@ -25,6 +25,8 @@ type statement
   = ReturnStmt of loc * expr
   | ExprStmt of loc * expr
   | BindStmt of loc * string * expr
+  | IfStmt of loc * expr * (statement list) option
+  | IfElseStmt of loc * expr * (statement list) option * (statement list) option
 
 type func =
   { name: string

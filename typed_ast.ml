@@ -4,7 +4,7 @@
  * It does not actually include type information presently
  * since it is not needed by other passes. Lambda captures
  * are the targets of named references are made explicit here.
- *)
+*)
 
 type loc = Lexing.position
 
@@ -30,6 +30,8 @@ type statement
   = ReturnStmt of loc * expr
   | ExprStmt of loc * expr
   | BindStmt of loc * id * expr
+  | IfStmt of loc * expr * (statement list) option
+  | IfElseStmt of loc * expr * (statement list) option * (statement list) option
 
 type func =
   { id: id

@@ -1,6 +1,7 @@
 (* Compiler Construction - Minimal Lambda Language *)
 
 open Typed_ast
+open Label_generator
 
 let lower program =
   let next_id = ref 0 in
@@ -76,6 +77,10 @@ let lower program =
       in
       (* The return instruction, same across the function. *)
       let rec lower_body acc stmts =
+        let extract_block block = match block with
+          | None -> []
+          | Some x -> x
+        in
         match stmts with
         | ReturnStmt(_, e) :: rest ->
           lower_body (Ir.Return :: lower_expr acc e) rest
@@ -83,6 +88,21 @@ let lower program =
           lower_body (Ir.Pop :: lower_expr acc e) rest
         | BindStmt(_, id, e) :: rest ->
           lower_body (Ir.SetLocal id :: lower_expr acc e) rest
+        | IfStmt(_, e, block) :: rest ->
+          let end_label = new_label() in
+          let block' = extract_block block in
+          let lowered_block = lower_body ( Ir.If end_label :: lower_expr acc e ) block' in
+          lower_body ( Ir.EndIf end_label :: lowered_block ) rest
+        | IfElseStmt(_, e, if_block, else_block) :: rest ->
+          let if_block' = extract_block if_block in
+          let else_block' = extract_block else_block in
+          let else_label = new_label() in
+          let end_label = new_label() in
+          let lowered_if_block = lower_body ( Ir.If else_label :: lower_expr acc e ) if_block' in
+          let lowered_else_block =
+            lower_body ( Ir.Else (end_label, else_label) :: lowered_if_block ) else_block'
+          in
+          lower_body ( Ir.EndIf end_label :: lowered_else_block ) rest
         | [] ->
           acc
       in

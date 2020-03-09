@@ -47,7 +47,7 @@ let compile_closure out { id; num_params; num_locals; name; insts; _ } =
          Printf.fprintf out "\tmovq $%d, %%rcx\n" i;
          Printf.fprintf out "\tpushq %%rcx\n"
        | ConstBool i ->
-         Printf.fprintf out "\tmovq $%d, %%rcx\n" i;
+         Printf.fprintf out "\tmovq $%d, %%rcx\n" (if i then 1 else 0);
          Printf.fprintf out "\tpushq %%rcx\n"
        | Closure(i, num_capture) ->
          let size = num_capture * 8 + 8 in
@@ -70,17 +70,17 @@ let compile_closure out { id; num_params; num_locals; name; insts; _ } =
          Printf.fprintf out "\tpopq %%rcx\n";
          Printf.fprintf out "\tpopq %%rdx\n";
          Printf.fprintf out "\tcmp %%rcx, %%rdx\n";
-         Printf.fprintf out "\tmovq $%d, %%rcx\n" true;
+         Printf.fprintf out "\tmovq $%d, %%rcx\n" 1;
          Printf.fprintf out "\tje 1f\n";
-         Printf.fprintf out "\tmovq $%d, %%rcx\n" false;
+         Printf.fprintf out "\tmovq $%d, %%rcx\n" 0;
          Printf.fprintf out "\t1: pushq %%rcx\n"
        | NotEquals ->
          Printf.fprintf out "\tpopq %%rcx\n";
          Printf.fprintf out "\tpopq %%rdx\n";
          Printf.fprintf out "\tcmp %%rcx, %%rdx\n";
-         Printf.fprintf out "\tmovq $%d, %%rcx\n" false;
+         Printf.fprintf out "\tmovq $%d, %%rcx\n" 0;
          Printf.fprintf out "\tje 1f\n";
-         Printf.fprintf out "\tmovq $%d, %%rcx\n" true;
+         Printf.fprintf out "\tmovq $%d, %%rcx\n" 1;
          Printf.fprintf out "\t1: pushq %%rcx\n"
        | And ->
          Printf.fprintf out "\tpopq %%rcx\n";
@@ -88,6 +88,14 @@ let compile_closure out { id; num_params; num_locals; name; insts; _ } =
        | Or ->
          Printf.fprintf out "\tpopq %%rcx\n";
          Printf.fprintf out "\torq %%rcx, (%%rsp)\n"
+       | If label ->
+         Printf.fprintf out "\tpopq %%rcx\n";
+         Printf.fprintf out "\tjnz %s\n" label;
+       | Else (end_label, else_label) ->
+         Printf.fprintf out "\tjmp %s\n" end_label;
+         Printf.fprintf out "\t%s:\n" else_label;
+       | EndIf label ->
+         Printf.fprintf out "\t%s:\n" label;
        | Call ->
          Printf.fprintf out "\tpopq %%rax\n";
          Printf.fprintf out "\tcallq *(%%rax)\n";

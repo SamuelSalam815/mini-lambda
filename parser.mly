@@ -17,6 +17,8 @@ open Ast
 %token NOTEQUALS
 %token AND
 %token OR
+%token IF
+%token ELSE
 %token LPAREN RPAREN LBRACE RBRACE
 %token FUNC
 %token RETURN
@@ -54,6 +56,14 @@ statement:
   | RETURN expr SEMI { ReturnStmt($startpos, $2) }
   | IDENT BIND expr SEMI { BindStmt($startpos, $1, $3) }
   | expr SEMI { ExprStmt($startpos, $1) }
+  | IF LPAREN condition = expr; RPAREN
+    true_branch = func_body;
+    ELSE
+    false_branch = func_body;
+    { IfElseStmt($startpos, condition, true_branch, false_branch ) }
+  | IF LPAREN condition = expr; RPAREN
+    true_branch = func_body;
+    { IfStmt($startpos, condition, true_branch) }
 
 expr:
   | unary_expr { $1 }
