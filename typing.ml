@@ -248,11 +248,11 @@ let rec check_expr scope expr
 
 (* Checks the type of a statement. *)
 let rec check_statements ret_ty acc scope stats
-  = let extract_statements statements = (match statements with
+  = let extract_statements statements num_locals = (match statements with
       | None ->
         None, 0
       | Some body ->
-        let nb, body = check_statements (new_ty_var()) (0, []) scope body in
+        let nb, body = check_statements (new_ty_var()) (num_locals, []) scope body in
         Some (List.rev body), nb
     )
   in
@@ -276,16 +276,16 @@ let rec check_statements ret_ty acc scope stats
     | IfStmt(loc, e, statements) :: rest ->
       let e', ty = check_expr scope e in
       unify loc ty TyBool;
-      let statements', num_locals = extract_statements statements in
+      let statements', num_locals = extract_statements statements nb in
       let node = Typed_ast.IfStmt(loc, e', statements') in
-      iter (nb + num_locals, node :: acc) scope rest
+      iter (nb, node :: acc) scope rest
     | IfElseStmt(loc, e, true_branch, false_branch) :: rest ->
       let e', ty = check_expr scope e in
       unify loc ty TyBool;
-      let true_branch', num_locals_a = extract_statements true_branch in
-      let false_branch', num_locals_b = extract_statements false_branch in
+      let true_branch', num_locals_a = extract_statements true_branch nb in
+      let false_branch', num_locals_b = extract_statements false_branch nb in
       let node = Typed_ast.IfElseStmt(loc, e', true_branch', false_branch') in
-      iter (nb + num_locals_a + num_locals_b , node :: acc) scope rest
+      iter (nb , node :: acc) scope rest
     | [] ->
       (nb, acc)
   in iter acc scope stats
