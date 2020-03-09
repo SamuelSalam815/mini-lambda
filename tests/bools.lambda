@@ -1,29 +1,42 @@
 func print_int(x);
 func input_int();
 
-func sum(x, y) {
-	return x - y;
-}
-
-func adder(x) {
-	return \(y) -> sum(x, y);
-}
-
 func main() {
-	x <- input_int();
-	y <- input_int();
-	f <- adder(x);
-	s <- f(y);
+	s <- input_int();
 
-	if ( (s==0) ) {
+	if ( true ) {
 		print_int(1);
+	} else {
+		print_int(100);
+	}
+
+	if ( false ) {
+		print_int(100);
 	} else {
 		print_int(2);
 	}
 
-	if ( (s==0) || (s == (0-1)) ) {
-		print_int(1);
-	} else {
-		print_int(2);
+	if ( true ) {
+		print_int(3);
+	}
+
+	if ( false ) {
+		print_int(100);
+	}
+
+	if( s == 0 ) {
+		print_int(4);
+	}
+
+	if( s == 1 ) {
+		print_int(4);
+	}
+
+	if( (s==0) || (s==1) ){
+		print_int(5);
+	}
+
+	if( (s!=0) && (s!=1) ){
+		print_int(4);
 	}
 }

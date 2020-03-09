@@ -1,18 +1,18 @@
 func print_int(x);
 func input_int();
 
-func sum(x, y) {
+func sub(x, y) {
 	return x - y;
 }
 
-func adder(x) {
-	return \(y) -> sum(x, y);
+func subber(x) {
+	return \(y) -> sub(x, y);
 }
 
 func main() {
 	x <- input_int();
 	y <- input_int();
-	f <- adder(x);
+	f <- subber(x);
 	s <- f(y);
 	print_int(s);
 }

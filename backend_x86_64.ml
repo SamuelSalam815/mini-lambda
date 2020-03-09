@@ -69,19 +69,21 @@ let compile_closure out { id; num_params; num_locals; name; insts; _ } =
        | Equals ->
          Printf.fprintf out "\tpopq %%rcx\n";
          Printf.fprintf out "\tpopq %%rdx\n";
-         Printf.fprintf out "\tcmp %%rcx, %%rdx\n";
+         Printf.fprintf out "\tcmp %%rdx, %%rcx\n";
+         Printf.fprintf out "\tjne 1f\n";
          Printf.fprintf out "\tmovq $%d, %%rcx\n" 1;
-         Printf.fprintf out "\tje 1f\n";
-         Printf.fprintf out "\tmovq $%d, %%rcx\n" 0;
-         Printf.fprintf out "\t1: pushq %%rcx\n"
+         Printf.fprintf out "\tjmp 2f\n";
+         Printf.fprintf out "\t1: movq $%d, %%rcx\n" 0;
+         Printf.fprintf out "\t2: pushq %%rcx\n"
        | NotEquals ->
          Printf.fprintf out "\tpopq %%rcx\n";
          Printf.fprintf out "\tpopq %%rdx\n";
-         Printf.fprintf out "\tcmp %%rcx, %%rdx\n";
+         Printf.fprintf out "\tcmp %%rdx, %%rcx\n";
+         Printf.fprintf out "\tjne 1f\n";
          Printf.fprintf out "\tmovq $%d, %%rcx\n" 0;
-         Printf.fprintf out "\tje 1f\n";
-         Printf.fprintf out "\tmovq $%d, %%rcx\n" 1;
-         Printf.fprintf out "\t1: pushq %%rcx\n"
+         Printf.fprintf out "\tjmp 2f\n";
+         Printf.fprintf out "\t1: movq $%d, %%rcx\n" 1;
+         Printf.fprintf out "\t2: pushq %%rcx\n"
        | And ->
          Printf.fprintf out "\tpopq %%rcx\n";
          Printf.fprintf out "\tandq %%rcx, (%%rsp)\n"
@@ -90,7 +92,8 @@ let compile_closure out { id; num_params; num_locals; name; insts; _ } =
          Printf.fprintf out "\torq %%rcx, (%%rsp)\n"
        | If label ->
          Printf.fprintf out "\tpopq %%rcx\n";
-         Printf.fprintf out "\tjnz %s\n" label;
+         Printf.fprintf out "\ttest %%rcx, %%rcx\n";
+         Printf.fprintf out "\tje %s\n" label;
        | Else (end_label, else_label) ->
          Printf.fprintf out "\tjmp %s\n" end_label;
          Printf.fprintf out "\t%s:\n" else_label;
